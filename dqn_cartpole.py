@@ -43,11 +43,11 @@ class DQN(nn.Module):
     def __init__(self, state_size, action_size):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(state_size, 128),
+            nn.Linear(state_size, 64),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(128, action_size)
+            nn.Linear(64, action_size)
         )
 
     def forward(self, x):
@@ -57,7 +57,7 @@ class DQN(nn.Module):
 # =========================
 # 3️⃣ Parametry
 # =========================
-env = gym.make("CartPole-v1", render_mode="human")
+env = gym.make("CartPole-v1", render_mode=None)
 
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
@@ -73,8 +73,6 @@ epsilon_min = 0.01
 lr = 0.001
 tau = 0.01                         # soft update
 episode_rewards = []
-buffer_size = 10000
-replay_buffer = ReplayBuffer(buffer_size)
 
 # =========================
 # 4️⃣ Sieci Q
@@ -116,6 +114,8 @@ def select_action(state, epsilon):
 def train():
     global epsilon
     num_episodes = 500
+    step_count = 0
+    solved_threshold = 475
 
     for episode in range(1, num_episodes+1):
         state, _ = env.reset()
@@ -129,9 +129,10 @@ def train():
             memory.push(state, action, reward, next_state, done)
             state = next_state
             total_reward += reward
+            step_count += 1
 
-            # Trening tylko gdy mamy wystarczająco danych
-            if len(memory) >= batch_size:
+            # Trening tylko gdy mamy wystarczająco danych i co 4 kroki
+            if len(memory) >= batch_size and step_count % 4 == 0:
                 states, actions, rewards, next_states, dones = memory.sample(batch_size)
 
                 states = torch.FloatTensor(states).to(device)
@@ -154,6 +155,9 @@ def train():
 
                 optimizer.zero_grad()
                 loss.backward()
+                # Gradient clipping — ogranicza maksymalną normę gradientów do 1.0
+                # Chroni przed "eksplozją gradientów" (duże TD-errory → za duży update wag)
+                torch.nn.utils.clip_grad_norm_(policy_net.parameters(), max_norm=1.0)
                 optimizer.step()
 
                 soft_update(target_net, policy_net, tau)
@@ -163,8 +167,20 @@ def train():
             epsilon = max(epsilon_min, epsilon * epsilon_decay)
 
         episode_rewards.append(total_reward)
+        avg_reward_100 = np.mean(episode_rewards[-100:])
 
-        print(f"Episode {episode}, Reward: {total_reward:.1f}, Epsilon: {epsilon:.3f}")
+        print(
+            f"Episode {episode}, Reward: {total_reward:.1f}, "
+            f"Avg100: {avg_reward_100:.1f}, Epsilon: {epsilon:.3f}"
+        )
+
+        if len(episode_rewards) >= 100 and avg_reward_100 > solved_threshold:
+            torch.save(policy_net.state_dict(), "dqn_cartpole.pth")
+            print(
+                f"Early stopping: Avg100 = {avg_reward_100:.1f} > {solved_threshold}. "
+                "Zapisano najlepszy model do dqn_cartpole.pth"
+            )
+            break
 
 
 # =========================
@@ -172,7 +188,6 @@ def train():
 # =========================
 train()
 env.close()
-torch.save(policy_net.state_dict(), "dqn_cartpole.pth")
 plt.figure(figsize=(10,5))
 plt.plot(episode_rewards)
 
