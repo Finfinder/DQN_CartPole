@@ -189,7 +189,12 @@ def train():
 train()
 env.close()
 plt.figure(figsize=(10,5))
-plt.plot(episode_rewards)
+
+window = 20
+smoothed = np.convolve(episode_rewards, np.ones(window)/window, mode='valid')
+
+plt.plot(episode_rewards, alpha=0.3)
+plt.plot(smoothed, linewidth=2)
 
 plt.title("DQN Training Progress")
 plt.xlabel("Episode")
