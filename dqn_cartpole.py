@@ -132,7 +132,7 @@ def train():
             step_count += 1
 
             # Trening tylko gdy mamy wystarczająco danych i co 4 kroki
-            if len(memory) >= batch_size and step_count % 4 == 0:
+            if len(memory) >= 1000 and step_count % 4 == 0:
                 states, actions, rewards, next_states, dones = memory.sample(batch_size)
 
                 states = torch.FloatTensor(states).to(device)
