@@ -1,68 +1,81 @@
 # DQN CartPole
 
-PyTorch implementation of a Double DQN agent for solving `CartPole-v1` from Gymnasium.
+Implementacja agenta Double DQN w PyTorch dla środowiska `CartPole-v1` (Gymnasium).
 
-## Project structure
+## Struktura projektu
 
-| File | Description |
+| Plik | Opis |
 |---|---|
-| `dqn_cartpole.py` | Main training script (replay buffer, epsilon-greedy policy, Double DQN target computation, soft target update) |
-| `dqn_model.py` | Standalone DQN architecture example |
-| `cartpole_test.py` | Quick random-policy environment check with rendering |
-| `dqn_cartpole.pth` | Saved model weights (created/updated during training) |
+| `dqn_cartpole.py` | Główny skrypt treningowy: replay buffer, polityka epsilon-greedy, Double DQN, soft update target network |
+| `play_cartpole.py` | Odtwarzanie wytrenowanego modelu z wizualizacją (`render_mode="human"`) |
+| `cartpole_test.py` | Krótki test środowiska na losowych akcjach |
+| `dqn_model.py` | Przykładowa definicja architektury sieci DQN |
+| `dqn_cartpole.pth` | Zapisane wagi modelu (checkpoint po treningu) |
 
-## Requirements
+## Wymagania
 
 - Python 3.11
-- PyTorch 2.5.1 (`+cu121` in current environment)
+- PyTorch 2.5.1 (`+cu121` w aktualnym środowisku)
 - Gymnasium 1.2.3
 - NumPy 2.3.5
 - Matplotlib 3.10.8
 
-## Environment setup (Windows PowerShell)
+## Uruchomienie środowiska (Windows PowerShell)
 
 ```powershell
 ./rlenv/Scripts/Activate.ps1
 ```
 
-If you need to install dependencies manually:
+Jeśli instalujesz zależności ręcznie:
 
 ```powershell
 pip install torch torchvision torchaudio gymnasium matplotlib numpy
 ```
 
-## Run
+## Jak uruchomić
 
-Train agent:
+Trening agenta:
 
 ```bash
 python dqn_cartpole.py
 ```
 
-Test environment interaction (random actions + `render_mode="human"`):
+Odtwarzanie wytrenowanego modelu (20 epizodów, okno środowiska):
+
+```bash
+python play_cartpole.py
+```
+
+Szybki test środowiska (losowe akcje):
 
 ```bash
 python cartpole_test.py
 ```
 
-## Training behavior
+## Domyślne parametry treningu
 
-Current defaults in `dqn_cartpole.py`:
+Aktualne wartości w `dqn_cartpole.py`:
 
-- episodes: `500`
-- replay buffer size: `10000`
+- liczba epizodów: `500`
+- replay buffer: `10000`
 - batch size: `64`
 - gamma: `0.99`
 - learning rate: `0.001`
-- epsilon schedule: `1.0 -> 0.01` with decay `0.995`
-- target update: soft update with `tau = 0.01`
-- optimization step: every 4 environment steps (after replay warmup)
+- epsilon: `1.0 -> 0.01` (decay `0.995`)
+- soft update: `tau = 0.01`
+- uczenie co `4` kroki środowiska (po zapełnieniu bufora min. `1000` próbek)
 - gradient clipping: max norm `1.0`
+- early stopping: średnia nagroda z ostatnich 100 epizodów > `400`
 
-Early stopping is enabled when average reward over the last 100 episodes exceeds `475`. On early stop, model weights are saved to `dqn_cartpole.pth`.
+Po spełnieniu warunku early stopping model jest zapisywany do `dqn_cartpole.pth`.
 
-## Outputs
+## Wyniki
 
-- Console logs per episode (`Reward`, `Avg100`, `Epsilon`)
-- Matplotlib training plot shown at the end of training
-- Updated checkpoint file: `dqn_cartpole.pth`
+- logi w konsoli per epizod: `Reward`, `Avg100`, `Epsilon`
+- wykres postępu treningu (Matplotlib) po zakończeniu
+- aktualizacja pliku checkpointu: `dqn_cartpole.pth`
+
+## Uwagi
+
+- `play_cartpole.py` wymaga istniejącego pliku `dqn_cartpole.pth`.
+- Jeśli renderowanie nie działa, upewnij się, że środowisko ma dostęp do okna GUI (lokalna sesja desktopowa).

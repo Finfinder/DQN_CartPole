@@ -115,7 +115,7 @@ def train():
     global epsilon
     num_episodes = 500
     step_count = 0
-    solved_threshold = 475
+    solved_threshold = 400
 
     for episode in range(1, num_episodes+1):
         state, _ = env.reset()
